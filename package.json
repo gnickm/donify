@@ -1,0 +1,30 @@
+{
+  "name": "donify",
+  "version": "1.0.0",
+  "description": "The opposite of promisify - convert a promise into a done callback",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "mocha --recursive --exit",
+    "coverage": "nyc --reporter=text mocha --recursive --exit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gnickm/donify.git"
+  },
+  "keywords": [
+    "promisify",
+    "callback"
+  ],
+  "author": "Nick Mitchell <eb.nickm@gmail.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/gnickm/donify/issues"
+  },
+  "homepage": "https://github.com/gnickm/donify#readme",
+  "devDependencies": {
+    "chai": "^4.3.4",
+    "chai-as-promised": "^7.1.1",
+    "mocha": "^9.1.4",
+    "nyc": "^15.1.0"
+  }
+}
