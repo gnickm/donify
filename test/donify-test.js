@@ -3,6 +3,8 @@
 /* eslint-disable no-magic-numbers */
 'use strict';
 
+const async          = require('async');
+const Bluebird       = require('bluebird');
 const chai           = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 
@@ -86,6 +88,7 @@ describe('donify()', () => {
             return expect(retval).to.eventually.be.rejectedWith('fail');
         });
     });
+
     describe('Edge cases', () => {
         it('should ignore any non-function value for done', (done) => {
             expect(donify(Promise.resolve('foo'), 123)).to.eventually.equal('foo');
@@ -96,16 +99,70 @@ describe('donify()', () => {
         });
 
         it('should reject any non-Promise value for promise', (done) => {
-            const REJECT_MSG = 'First parameter in donify() must be a Promise';
+            const REJECT_ERROR =  new Error('First parameter in donify() must be a Promise');
 
-            expect(donify(123)).to.eventually.be.rejectedWith(REJECT_MSG);
-            expect(donify({})).to.eventually.be.rejectedWith(REJECT_MSG);
-            expect(donify('blah')).to.eventually.be.rejectedWith(REJECT_MSG);
-            expect(donify(null)).to.eventually.be.rejectedWith(REJECT_MSG);
+            expect(donify(123)).to.eventually.be.rejectedWith(REJECT_ERROR);
+            expect(donify({})).to.eventually.be.rejectedWith(REJECT_ERROR);
+            expect(donify('blah')).to.eventually.be.rejectedWith(REJECT_ERROR);
+            expect(donify(null)).to.eventually.be.rejectedWith(REJECT_ERROR);
             expect(donify(function() {
                 // Stuff
-            })).to.eventually.be.rejectedWith(REJECT_MSG);
+            })).to.eventually.be.rejectedWith(REJECT_ERROR);
             done();
         });
+
+        it('should call done(err) for any non-Promise value for promise and a done is specified', (done) => {
+            async.each([
+                123,
+                {},
+                'blah',
+                null,
+                function() {
+                    // Stuff
+                }
+            ], (badPromise, next) => {
+                donify(badPromise, (err, result) => {
+                    expect(err).to.be.an('Error');
+                    expect(err.message).to.equal('First parameter in donify() must be a Promise');
+                    expect(result).to.be.undefined;
+                    next();
+                });
+            }, done);
+        });
+
+        it('should handle other flavors of promises', () => {
+            var retval = donify(new Bluebird((resolve) => resolve('foo')));
+
+            return expect(retval).to.eventually.equal('foo');
+        });
+
+        it('should execute done with other flavors of promise', (done) => {
+            var promise = new Bluebird((resolve) => resolve('foo'));
+            var retval = donify(promise, (err, result) => {
+                expect(err).to.be.null;
+                expect(result).to.equal('foo');
+                done();
+            });
+
+            expect(retval).to.be.true;
+        });
+
+        it('should handle async promises', () => {
+            var retval = donify(async.times(5, (ndx, next) => next(null, ndx)));
+
+            return expect(retval).to.eventually.have.members([0, 1, 2, 3, 4]);
+        });
+
+        it('should handle async promise with provided done', (done) => {
+            donify(
+                async.times(5, (ndx, next) => next(null, ndx)),
+                function(err, result) {
+                    expect(err).to.be.null;
+                    expect(result).to.have.members([0, 1, 2, 3, 4]);
+                    done();
+                }
+            );
+        });
+
     });
 });
